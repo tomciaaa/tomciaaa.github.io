@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <title>Where is the certificate store in [.Net Core](https://dotnet.github.io/) (on Linux)</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+
+        <!--[if IE]>
+            <script src="https://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">Ramblings of a geek with a Chromebook </a></h1>
+                <nav><ul>
+                    <li class="active"><a href="/category/tech.html">Tech</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/where-is-the-certificate-store-in-net-corehttpsdotnetgithubio-on-linux.html" rel="bookmark"
+           title="Permalink to Where is the certificate store in [.Net Core](https://dotnet.github.io/) (on Linux)">Where is the certificate store in [.Net Core](https://dotnet.github.io/) (on Linux)</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2016-06-05T20:29:00+01:00">
+                Published: Sun 05 June 2016
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/tomciaaa.html">tomciaaa</a>
+        </address>
+<p>In <a href="/category/tech.html">Tech</a>.</p>
+
+</footer><!-- /.post-info -->      <p>After mucking about with this for a good few hours I decided it's at least worth a quick write-up.</p>
+<p>So first of all, most people are aware that OpenSSL is backing the SSL libraries in .Net Core on Linux. Which is great, because <a href="http://project-mono.org">Mono</a>'s SSL support is, horrible -- it supports about 4 ciphers out of the box and while there are initiatives out there to get this up to scratch, it's not in the standard versions.</p>
+<p>On the other hand, Mono has very extensive <a href="http://www.mono-project.com/docs/faq/security/">docs</a> in how to do certificate management and how to add custom certificates. A quick Google turns up nothing of the sort for .Net Core. Probably not least, because .Net Core doesn't make for a great search term, but that's a different story.</p>
+<p>Luckily, SSL has pretty decent (albeit 3rd party) docs on how to manage the certificate store: [http://gagravarr.org/writing/openssl-certs/index.shtml].</p>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+                <div class="blogroll">
+                        <h2>blogroll</h2>
+                        <ul>
+                            <li><a href="http://getpelican.com/">Pelican</a></li>
+                            <li><a href="http://python.org/">Python.org</a></li>
+                            <li><a href="http://jinja.pocoo.org/">Jinja2</a></li>
+                            <li><a href="#">You can modify those links in your config file</a></li>
+                        </ul>
+                </div><!-- /.blogroll -->
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+
+                            <li><a href="#">You can add links in your config file</a></li>
+                            <li><a href="#">Another social link</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <title>Testing .Net Core SSL or where is the certificate store (on Linux)</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+
+        <!--[if IE]>
+            <script src="https://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">Ramblings of a geek with a Chromebook </a></h1>
+                <nav><ul>
+                    <li class="active"><a href="/category/tech.html">Tech</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/testing-net-core-ssl-or-where-is-the-certificate-store-on-linux.html" rel="bookmark"
+           title="Permalink to Testing .Net Core SSL or where is the certificate store (on Linux)">Testing .Net Core SSL or where is the certificate store (on Linux)</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2016-06-05T20:29:00+01:00">
+                Published: Sun 05 June 2016
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/tomciaaa.html">tomciaaa</a>
+        </address>
+<p>In <a href="/category/tech.html">Tech</a>.</p>
+
+</footer><!-- /.post-info -->      <p>After mucking about with this for a good few hours I decided it's at least worth a quick write-up.</p>
+<p>So first of all, most people are aware that OpenSSL is backing the SSL libraries in <a href="https://dotnet.github.io/">.Net Core</a> on Linux. Which is great, because <a href="http://project-mono.org">Mono</a>'s SSL support is horrible -- it supports about 4 ciphers from the 80's (I don't have the exact list to hand, but is dire) and while there are initiatives out there to get this up to scratch, it's not in the standard versions.</p>
+<p>On the other hand, Mono has very extensive <a href="http://www.mono-project.com/docs/faq/security/">docs</a> on how to do certificate management and how to add custom certificates. A quick Google turns up nothing of the sort for .Net Core. Probably not least, because .Net Core doesn't make for a great search term, but that's a different story.</p>
+<p>Luckily, SSL has pretty decent (albeit 3rd party) <a href="http://gagravarr.org/writing/openssl-certs/index.shtml">docs</a> on how to manage the certificate store. On the other hand, I managed to miss that completely and run off on a wild goose-chase through the corefx codebase trying to figure out what it's doing.</p>
+<h1>Digging through the corefx code</h1>
+<p>Unsurprisingly, the <a href="https://github.com/dotnet/corefx">corefx repo</a> is very well structured and it doesn't take much to figure out what's going on, though downloading the zip is definitely a must to explore what's going on as Github search isn't very great when it comes to exploring the codebase using a <code>grep</code> approach. A quick grep for 'SSL_CTX' is a good start. Also if you search for a specific OpenSSL way of doing things, you can then grep for that in corefx to see if it's
+wrapped and where it's used.</p>
+<h1>Testing SSL</h1>
+<p>Eventually, we do find an interesting way to write our unit tests and see that corefx respects the magic <code>SSL_CERT_FILE</code> environment variable (see <a href="https://github.com/dotnet/corefx/blob/a44a3d9de015cfe83917db6f99012068d8c3d716/src/System.Security.Cryptography.X509Certificates/src/Internal/Cryptography/Pal.Unix/StorePal.cs#L200">StorePal.cs</a>). Setting this allows us to quickly unit-test code without the need of adding test certificates into our trust-store. For example my project uses the following strip to run it's tests with a test ca:</p>
+<div class="highlight"><pre><span></span>SSL_CERT_FILE=../misc/certs/ca-cert /home/tomciaaa/dotnet/dotnet test -xml ../xunit_results.xml
+</pre></div>
+
+
+<p>Also it's fairly easy to spin up an ssl server using the fake certificates from inside the C# app making for a rather contained test.</p>
+<div class="highlight"><pre><span></span><span class="nt">private</span> <span class="nt">static</span> <span class="nt">void</span> <span class="nt">RunTest</span><span class="o">(</span><span class="nt">int</span> <span class="nt">port</span><span class="o">,</span> <span class="nt">string</span> <span class="nt">extraOpenSslArgs</span><span class="o">)</span>
+<span class="p">{</span>
+    <span class="n">var</span> <span class="n">testString</span> <span class="o">=</span> <span class="s2">&quot;Hello from a Xunit test!&quot;</span><span class="p">;</span>
+
+    <span class="o">//</span> <span class="n">Process</span> <span class="n">management</span> <span class="n">gubbins</span> <span class="n">to</span> <span class="n">spin</span> <span class="n">up</span> <span class="n">an</span> <span class="n">openssl</span> <span class="n">server</span>
+    <span class="n">var</span> <span class="n">process</span> <span class="o">=</span> <span class="n">new</span> <span class="n">System</span><span class="o">.</span><span class="n">Diagnostics</span><span class="o">.</span><span class="n">Process</span><span class="p">();</span>
+    <span class="n">process</span><span class="o">.</span><span class="n">StartInfo</span><span class="o">.</span><span class="n">FileName</span> <span class="o">=</span> <span class="s2">&quot;/usr/bin/openssl&quot;</span><span class="p">;</span>
+    <span class="n">process</span><span class="o">.</span><span class="n">StartInfo</span><span class="o">.</span><span class="n">Arguments</span> <span class="o">=</span> <span class="s2">&quot;s_server -cert ../misc/certs/client-cert-signed -key ../misc/certs/client-key -CAfile ../misc/certs/ca-cert -accept &quot;</span> <span class="o">+</span> <span class="n">port</span> <span class="o">+</span> <span class="s2">&quot; -pass pass:clientqwerty&quot;</span> <span class="o">+</span> <span class="n">extraOpenSslArgs</span><span class="p">;</span>
+    <span class="n">process</span><span class="o">.</span><span class="n">StartInfo</span><span class="o">.</span><span class="n">UseShellExecute</span> <span class="o">=</span> <span class="n">false</span><span class="p">;</span>
+    <span class="n">process</span><span class="o">.</span><span class="n">StartInfo</span><span class="o">.</span><span class="n">CreateNoWindow</span> <span class="o">=</span> <span class="n">true</span><span class="p">;</span>
+    <span class="n">process</span><span class="o">.</span><span class="n">StartInfo</span><span class="o">.</span><span class="n">RedirectStandardOutput</span> <span class="o">=</span> <span class="n">true</span><span class="p">;</span>
+    <span class="n">process</span><span class="o">.</span><span class="n">StartInfo</span><span class="o">.</span><span class="n">RedirectStandardError</span> <span class="o">=</span> <span class="n">false</span><span class="p">;</span>
+    <span class="n">process</span><span class="o">.</span><span class="n">StartInfo</span><span class="o">.</span><span class="n">RedirectStandardInput</span> <span class="o">=</span> <span class="n">true</span><span class="p">;</span>
+    <span class="n">process</span><span class="o">.</span><span class="n">Start</span><span class="p">();</span>
+
+    <span class="n">using</span> <span class="p">(</span><span class="n">var</span> <span class="n">secureStream</span> <span class="o">=</span> <span class="n">MySslStreamProvider</span><span class="o">.</span><span class="n">ConnectStream</span><span class="p">(</span><span class="s2">&quot;localhost&quot;</span><span class="o">,</span> <span class="n">port</span><span class="p">))</span>
+    <span class="err">{</span>
+        <span class="o">//</span> <span class="n">Send</span> <span class="n">something</span> <span class="n">C</span><span class="err">#</span> <span class="o">-&gt;</span> <span class="n">openssl</span>
+        <span class="n">secureStream</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">Encoding</span><span class="o">.</span><span class="n">UTF8</span><span class="o">.</span><span class="n">GetBytes</span><span class="p">(</span><span class="n">testString</span><span class="p">));</span>
+
+        <span class="o">//</span> <span class="n">Send</span> <span class="n">something</span> <span class="n">openssl</span> <span class="o">-&gt;</span> <span class="n">C</span><span class="err">#</span> <span class="n">and</span> <span class="n">check</span> <span class="n">that</span> <span class="n">C</span><span class="err">#</span> <span class="n">received</span> <span class="n">it</span>
+        <span class="n">var</span> <span class="n">testString2</span> <span class="o">=</span> <span class="s2">&quot;The quick brow fox jumps ove the lazy dog.\n&quot;</span><span class="p">;</span>
+        <span class="n">var</span> <span class="n">encoding</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">StandardInput</span><span class="o">.</span><span class="n">Encoding</span><span class="p">;</span>
+        <span class="n">var</span> <span class="n">testBytes</span> <span class="o">=</span> <span class="n">encoding</span><span class="o">.</span><span class="n">GetBytes</span><span class="p">(</span><span class="n">testString2</span><span class="p">);</span>
+        <span class="n">process</span><span class="o">.</span><span class="n">StandardInput</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">testString2</span><span class="p">);</span>
+        <span class="n">process</span><span class="o">.</span><span class="n">StandardInput</span><span class="o">.</span><span class="n">Flush</span><span class="p">();</span>
+        <span class="n">process</span><span class="o">.</span><span class="n">StandardInput</span><span class="o">.</span><span class="n">Dispose</span><span class="p">();</span>
+        <span class="o">//</span> <span class="n">Uses</span> <span class="n">a</span> <span class="n">custom</span> <span class="n">extension</span> <span class="n">method</span><span class="o">,</span> <span class="n">but</span> <span class="n">easy</span> <span class="n">to</span> <span class="n">write</span> <span class="n">using</span> <span class="n">a</span> <span class="n">simple</span> <span class="n">Read</span><span class="p">()</span> <span class="n">as</span> <span class="n">well</span>
+        <span class="n">var</span> <span class="n">responseBytes</span> <span class="o">=</span> <span class="n">secureStream</span><span class="o">.</span><span class="n">ReadExactlyNBytes</span><span class="p">(</span><span class="n">testBytes</span><span class="o">.</span><span class="n">Length</span><span class="p">);</span>
+        <span class="n">Assert</span><span class="o">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">testString2</span><span class="o">,</span> <span class="n">encoding</span><span class="o">.</span><span class="n">GetString</span><span class="p">(</span><span class="n">responseBytes</span><span class="p">));</span>
+    <span class="p">}</span>
+
+    <span class="nt">process</span><span class="nc">.Kill</span><span class="o">();</span>
+    <span class="nt">var</span> <span class="nt">response</span> <span class="o">=</span> <span class="nt">process</span><span class="nc">.StandardOutput.ReadToEnd</span><span class="o">();</span>
+    <span class="o">//</span> <span class="nt">Check</span> <span class="nt">that</span> <span class="nt">C</span><span class="err">#</span> <span class="nt">-</span><span class="o">&gt;</span> <span class="nt">opessl</span> <span class="nt">transmission</span> <span class="nt">was</span> <span class="nt">successful</span>
+    <span class="nt">Assert</span><span class="nc">.Contains</span><span class="o">(</span><span class="nt">testString</span><span class="o">,</span> <span class="nt">response</span><span class="o">);</span>
+<span class="err">}</span>
+</pre></div>
+
+
+<p>There's also the <code>SSL_CERT_DIR</code> environment variable that allows you to specify the full store override, however I found this option quicker.</p>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+                <div class="blogroll">
+                        <h2>blogroll</h2>
+                        <ul>
+                            <li><a href="http://getpelican.com/">Pelican</a></li>
+                            <li><a href="http://python.org/">Python.org</a></li>
+                            <li><a href="http://jinja.pocoo.org/">Jinja2</a></li>
+                            <li><a href="#">You can modify those links in your config file</a></li>
+                        </ul>
+                </div><!-- /.blogroll -->
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+
+                            <li><a href="#">You can add links in your config file</a></li>
+                            <li><a href="#">Another social link</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>
