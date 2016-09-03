@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
         <meta charset="utf-8" />
-        <title>Ramblings of a geek with a Chromebook - Tech</title>
+        <title>A journey to the Kerberos: how to get Kerberized Kafka Windows clients connecting to Linux brokers all backed by Active Directory</title>
         <link rel="stylesheet" href="/theme/css/main.css" />
 
         <!--[if IE]>
@@ -17,10 +17,15 @@
                     <li class="active"><a href="/category/tech.html">Tech</a></li>
                 </ul></nav>
         </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/a-journey-to-the-kerberos-how-to-get-kerberized-kafka-windows-clients-connecting-to-linux-brokers-all-backed-by-active-directory.html" rel="bookmark"
+           title="Permalink to A journey to the Kerberos: how to get Kerberized Kafka Windows clients connecting to Linux brokers all backed by Active Directory">A journey to the Kerberos: how to get Kerberized Kafka Windows clients connecting to Linux brokers all backed by Active Directory</a></h1>
+    </header>
 
-            <aside id="featured" class="body">
-                <article>
-                    <h1 class="entry-title"><a href="/a-journey-to-the-kerberos-how-to-get-kerberized-c-kafka-windows-clients-connecting-to-linux-brokers-all-backed-by-active-directory.html">A journey to the Kerberos: how to get Kerberized C Kafka Windows clients connecting to Linux brokers all backed by Active Directory</a></h1>
+    <div class="entry-content">
 <footer class="post-info">
         <abbr class="published" title="2016-09-03T06:34:00+00:00">
                 Published: Sat 03 September 2016
@@ -31,7 +36,7 @@
         </address>
 <p>In <a href="/category/tech.html">Tech</a>.</p>
 
-</footer><!-- /.post-info --><p>Now that I got my best(worst?) attempt at referencing <a href="https://en.wikipedia.org/wiki/Journey_to_the_West">a tale</a> that served as inspiration to the <a href="https://en.wikipedia.org/wiki/Goku">legend of Goku</a> out of the way, let me tell you a tale of how over a week of teeth-gritting the gods of Kerberos were appeased and bent to my will. As you can probably guess from me referring to magical entities, by no means do I claim to have a deep understanding of what's going on, just that I got what I
+</footer><!-- /.post-info -->      <p>Now that I got my best(worst?) attempt at referencing <a href="https://en.wikipedia.org/wiki/Journey_to_the_West">a tale</a> that served as inspiration to the <a href="https://en.wikipedia.org/wiki/Goku">legend of Goku</a> out of the way, let me tell you a tale of how over a week of teeth-gritting the gods of Kerberos were appeased and bent to my will. As you can probably guess from me referring to magical entities, by no means do I claim to have a deep understanding of what's going on, just that I got what I
 needed to work.</p>
 <h1>Premise</h1>
 <p>It all started with a challenge: <a href="https://kafka.apache.org">Kafka</a> supports SASL with GSSAPI(Kerberos), but the best non-Java public Kafka library available <a href="https://github.com/edenhill/librdkafka/blob/master/README.win32">only supports mutual TLS on Windows</a>. While mutual TLS is a good enough option for the most part, managing all those client certificates can be just as flawed as storing plaintext passwords (which we all know is a big no-no) so let's try something that most systems have integration with -- Kerberos.</p>
@@ -86,44 +91,18 @@ needed to work.</p>
 <p>Let's assume we got all the issues from the above sorted and our Kafka brokers running on Windows happily authenticate other Java clients so we know the AD is OK. But now we're faced with a question -- how on earth do I sort out Windows access. Well, a quick Google once again suggests we're treading on a path less explored. Cyrus SASL seems like a decent option, plus given that our target is <a href="https://github.com/edenhill/librdkafka">librdkafka</a> that's what I'm trying to get going.</p>
 <p>First off, let's have a quick look at the <a href="https://www.cyrusimap.org/docs/cyrus-sasl/2.1.25/windows.php">build instructions on the official site</a>. Mentions of Visual Studio 6 and the last non-automated commit to that document being just a <a href="https://github.com/cyrusimap/cyrus-sasl/commits/master/doc/windows.html">hair over a decade old</a> is not confidence inspiring nor is the mention of only supporting a proprietary Kerberos implementation by CyberSafe. Nonetheless, when the going gets tough, the tough get going. After getting latest <a href="https://slproweb.com/products/Win32OpenSSL.html">OpenSSL for Windows</a>, the MIT Kerberos for Windows SDK outlined below, and sorting out settings in <code>win32/common.mk</code>, a few includes and <code>#define</code> values the whole thing builds using <a href="https://msdn.microsoft.com/en-GB/library/ms229859(v=vs.110).aspx">Visual Studio Developer Command Prompt</a> and the <a href="https://msdn.microsoft.com/en-us/library/dd9y37ha.aspx">nmake</a> commands as per the decade old docs. It does finish with and error status, but that's linking the executables and I really didn't care for them.</p>
 <h3>Ah the Windows Registry</h3>
-<p>I thought this deserved a special shout-out as this had me stumped for a good few hours. After I built the thing, Cyrus SASL was getting these magic plugins that I hadn't even compiled in its list (and missing the all important saslGSSAPI plugin that I <em>did</em> compile). After eventually firing up a debugger, it turns out that I had another piece of software installed that came with Cyrus SASL libraries and in its infinite wisdom the library looks up its plugin location based on <code>SOFTWARE\\Carnegie Mellon\\Project Cyrus\\SASL Library</code> registry value which this other piece of software has helpfully set. Luckily it allows one to provide a callback to specify the plugin location, but it still was quite a significant WTF moment seeing DLLs being loaded in almost a <a href="https://www.youtube.com/watch?v=HhGuXCuDb1U&amp;feature=youtu.be&amp;t=354">homeopathic manner, purely by virtue of the code being next to the library at some point</a>.</p>
+<p>I thought this deserved a special shout-out as this had me stumped for a good few hours. After I got the thing running I spent a good few hours trying to figure out how Cyrus SASL was getting these magic plugins that I hadn't even compiled in its list (and missing the magical saslGSSAPI one that I did compile and want). After firing up a debugger, it turns out that I had another piece of software installed that came with Cyrus SASL libraries and in its infinite wisdom the library looks up its plugin location based on <code>SOFTWARE\\Carnegie Mellon\\Project Cyrus\\SASL Library</code> registry value which this other piece of software has helpfully set. Luckily it allows one to provide a callback to specify the plugin location, but it still was quite a significant WTF moment seeing DLLs being loaded in almost a <a href="https://www.youtube.com/watch?v=HhGuXCuDb1U&amp;feature=youtu.be&amp;t=354">homeopathic manner, purely by virtue of the code being next to the library at some point</a>.</p>
 <h2>MIT Kerberos for Windows</h2>
-<p>This was probably the most pleasant surprise during the entire process. It actually worked pretty much out of the box without too much prodding and MIT even provide a <a href="http://web.mit.edu/kerberos/dist/#kfw-4.1">binary installer</a>. But again, me being me, I managed to go about this in all the wrong ways and <a href="http://clientsfromhell.net/post/356276259/i-dont-care-if-it-loses-90-of-visitors-we-cant">just like that client from hell, I believe I must share it with you</a>. First off, I decided that it would be a good idea to not install the 'client' part from the installer only going for the SDK. That's cool and all, but turn out the SDK only includes compile time libraries (.lib files for linking, no runtime .dlls). After that I got annoyed with the installer asking me to restart the machine (I know I don't need to, but I just want the libraries, not whatever else it may be doing to my aforementioned magic Windows Registry). So I extracted it using 7zip and after some file renaming it was good to go -- for some reason after extracting the .msi archive using 7zip some prefixes were added and dots were mostly replaced with underscores leading to files like libgssappi_dll.
+<p>This was probably the most pleasant surprise during the entire process. It actually worked pretty much out of the box without too much prodding and they even provide a <a href="http://web.mit.edu/kerberos/dist/#kfw-4.1">binaries installer</a>. But again, me being me, I managed to go about this in all the wrong ways and <a href="http://clientsfromhell.net/post/356276259/i-dont-care-if-it-loses-90-of-visitors-we-cant">just like that client from hell, I believe I must share it with you</a>. First off, I decided that it would be a good idea to not install the 'client' part from the installer only going for the SDK. That's cool and all, but turn out the SDK only includes compile time libraries (.lib files for linking, no runtime .dlls). After that I got annoyed with the installer asking me to restart the machine (I know I don't need to, but I just want the libraries, not whatever else it may be doing to my aforementioned magic Windows Registry). So I extracted it using 7zip and after some file renaming it was good to go -- for some reason after extracting the .msi archive using 7zip some prefixes were added and dots were mostly replaced with underscores leading to files like libgssappi_dll.
 However, this sent me on a very silly wild goose-chase, since I missed an important part about the krb5.conf file... On Windows it's called krb5.ini. I even managed to forget reading it from the same <a href="https://github.com/krb5/krb5/blob/master/src/windows/README">doc</a> I read to figure out where the conf file is read from on Windows. Another tricky bit, the colon at the end of the cache name is important! you want <code>default_ccache_name = "MSLSA:"</code> <strong>not</strong> <code>default_ccache_name = "MSLSA"</code> in your krb5.ini. After that it just magically works on Windows without any need for keytab files.</p>
 <h2>librdkafka + Cyrus SASL on Windows</h2>
-<p>Finally, tying it all together, getting <a href="https://github.com/edenhill/librdkafka">librdkafka</a> to run Kerberized was a simple enough process -- just don't forget you'll probably need that SASL_CB_GETPATH callback when calling <code>sasl_init</code> if you want to load the plugins you've actually built. There are also some clashing <code>#define</code> statements between Cyrus SASL headers and librdkafka and librdkafka process handling code in <code>rdkafka_sasl.c</code> is only for UNIX uses, but that can be dropped as you'll be using <code>MSLSA:</code> tickets cache, so no need for running <code>kinit</code> (another huge win :) ).</p>
+<p>Finally, tying it all together, getting <a href="https://github.com/edenhill/librdkafka">librdkafka</a> to run Kerberized was a simple enough process -- just don't forget you'll probably need that SASL_CB_GETPATH callback when calling <code>sasl_init</code>. There are also some clashing <code>#define</code> statements between Cyrus SASL headers and librdkafka and librdkafka process handling code in rdkafka_sasl.c is only for UNIX uses, but that can be dropped as you'll be using MSLSA: tickets cache, so no need for running kinit (another huge win :) ).</p>
 <h1>Fin</h1>
-<p>That's it folks. In broad strokes, that's how you bring in Linux Kerberized Kafka brokers into the land of Windows :)</p>                </article>
-            </aside><!-- /#featured -->
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
+<p>That's it folks. In broad strokes, that's how you bring in Linux Kerberized Kafka brokers into the land of Windows :)</p>
+    </div><!-- /.entry-content -->
 
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/testing-net-core-ssl-or-where-is-the-certificate-store-on-linux.html" rel="bookmark"
-                           title="Permalink to Testing .Net Core SSL or where is the certificate store (on Linux)">Testing .Net Core SSL or where is the certificate store (on Linux)</a></h1>
-                </header>
-
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2016-06-05T20:29:00+01:00">
-                Published: Sun 05 June 2016
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="/author/tomciaaa.html">tomciaaa</a>
-        </address>
-<p>In <a href="/category/tech.html">Tech</a>.</p>
-
-</footer><!-- /.post-info -->                <p>After mucking about with this for a good few hours I decided it's at least worth a quick write-up.</p>
-<p>So first of all, most people are aware that OpenSSL is backing the SSL libraries in <a href="https://dotnet.github.io/">.Net Core</a> on Linux. Which is great, because <a href="http://project-mono.org">Mono</a>'s SSL support is horrible ...</p>
-                <a class="readmore" href="/testing-net-core-ssl-or-where-is-the-certificate-store-on-linux.html">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-                </ol><!-- /#posts-list -->
-                </section><!-- /#content -->
+  </article>
+</section>
         <section id="extras" class="body">
                 <div class="blogroll">
                         <h2>blogroll</h2>

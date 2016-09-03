@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
         <meta charset="utf-8" />
-        <title>Ramblings of a geek with a Chromebook - Tech</title>
+        <title>A journey to the Kerberos: how to get Kerberized C Kafka Windows clients connecting to Linux brokers all backed by Active Directory</title>
         <link rel="stylesheet" href="/theme/css/main.css" />
 
         <!--[if IE]>
@@ -17,10 +17,15 @@
                     <li class="active"><a href="/category/tech.html">Tech</a></li>
                 </ul></nav>
         </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/a-journey-to-the-kerberos-how-to-get-kerberized-c-kafka-windows-clients-connecting-to-linux-brokers-all-backed-by-active-directory.html" rel="bookmark"
+           title="Permalink to A journey to the Kerberos: how to get Kerberized C Kafka Windows clients connecting to Linux brokers all backed by Active Directory">A journey to the Kerberos: how to get Kerberized C Kafka Windows clients connecting to Linux brokers all backed by Active Directory</a></h1>
+    </header>
 
-            <aside id="featured" class="body">
-                <article>
-                    <h1 class="entry-title"><a href="/a-journey-to-the-kerberos-how-to-get-kerberized-c-kafka-windows-clients-connecting-to-linux-brokers-all-backed-by-active-directory.html">A journey to the Kerberos: how to get Kerberized C Kafka Windows clients connecting to Linux brokers all backed by Active Directory</a></h1>
+    <div class="entry-content">
 <footer class="post-info">
         <abbr class="published" title="2016-09-03T06:34:00+00:00">
                 Published: Sat 03 September 2016
@@ -31,7 +36,7 @@
         </address>
 <p>In <a href="/category/tech.html">Tech</a>.</p>
 
-</footer><!-- /.post-info --><p>Now that I got my best(worst?) attempt at referencing <a href="https://en.wikipedia.org/wiki/Journey_to_the_West">a tale</a> that served as inspiration to the <a href="https://en.wikipedia.org/wiki/Goku">legend of Goku</a> out of the way, let me tell you a tale of how over a week of teeth-gritting the gods of Kerberos were appeased and bent to my will. As you can probably guess from me referring to magical entities, by no means do I claim to have a deep understanding of what's going on, just that I got what I
+</footer><!-- /.post-info -->      <p>Now that I got my best(worst?) attempt at referencing <a href="https://en.wikipedia.org/wiki/Journey_to_the_West">a tale</a> that served as inspiration to the <a href="https://en.wikipedia.org/wiki/Goku">legend of Goku</a> out of the way, let me tell you a tale of how over a week of teeth-gritting the gods of Kerberos were appeased and bent to my will. As you can probably guess from me referring to magical entities, by no means do I claim to have a deep understanding of what's going on, just that I got what I
 needed to work.</p>
 <h1>Premise</h1>
 <p>It all started with a challenge: <a href="https://kafka.apache.org">Kafka</a> supports SASL with GSSAPI(Kerberos), but the best non-Java public Kafka library available <a href="https://github.com/edenhill/librdkafka/blob/master/README.win32">only supports mutual TLS on Windows</a>. While mutual TLS is a good enough option for the most part, managing all those client certificates can be just as flawed as storing plaintext passwords (which we all know is a big no-no) so let's try something that most systems have integration with -- Kerberos.</p>
@@ -93,37 +98,11 @@ However, this sent me on a very silly wild goose-chase, since I missed an import
 <h2>librdkafka + Cyrus SASL on Windows</h2>
 <p>Finally, tying it all together, getting <a href="https://github.com/edenhill/librdkafka">librdkafka</a> to run Kerberized was a simple enough process -- just don't forget you'll probably need that SASL_CB_GETPATH callback when calling <code>sasl_init</code> if you want to load the plugins you've actually built. There are also some clashing <code>#define</code> statements between Cyrus SASL headers and librdkafka and librdkafka process handling code in <code>rdkafka_sasl.c</code> is only for UNIX uses, but that can be dropped as you'll be using <code>MSLSA:</code> tickets cache, so no need for running <code>kinit</code> (another huge win :) ).</p>
 <h1>Fin</h1>
-<p>That's it folks. In broad strokes, that's how you bring in Linux Kerberized Kafka brokers into the land of Windows :)</p>                </article>
-            </aside><!-- /#featured -->
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
+<p>That's it folks. In broad strokes, that's how you bring in Linux Kerberized Kafka brokers into the land of Windows :)</p>
+    </div><!-- /.entry-content -->
 
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/testing-net-core-ssl-or-where-is-the-certificate-store-on-linux.html" rel="bookmark"
-                           title="Permalink to Testing .Net Core SSL or where is the certificate store (on Linux)">Testing .Net Core SSL or where is the certificate store (on Linux)</a></h1>
-                </header>
-
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2016-06-05T20:29:00+01:00">
-                Published: Sun 05 June 2016
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="/author/tomciaaa.html">tomciaaa</a>
-        </address>
-<p>In <a href="/category/tech.html">Tech</a>.</p>
-
-</footer><!-- /.post-info -->                <p>After mucking about with this for a good few hours I decided it's at least worth a quick write-up.</p>
-<p>So first of all, most people are aware that OpenSSL is backing the SSL libraries in <a href="https://dotnet.github.io/">.Net Core</a> on Linux. Which is great, because <a href="http://project-mono.org">Mono</a>'s SSL support is horrible ...</p>
-                <a class="readmore" href="/testing-net-core-ssl-or-where-is-the-certificate-store-on-linux.html">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-                </ol><!-- /#posts-list -->
-                </section><!-- /#content -->
+  </article>
+</section>
         <section id="extras" class="body">
                 <div class="blogroll">
                         <h2>blogroll</h2>
