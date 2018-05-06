@@ -43,8 +43,8 @@
 <p>To the uninitiated, Docker images indeed can be saved and loaded as simple tar files, as docker cli provides <a href="https://docs.docker.com/engine/reference/commandline/save">save</a> and <a href="https://docs.docker.com/engine/reference/commandline/load/">load</a> commands. So one would assume that <a href="https://hub.docker.com">Docker Hub</a> and similar would allow you to just download these tar files, right? Well, no. Closest I've seen was <a href="https://quay.io">quay.io</a>, but even then you need to have special perms to the repo. And there are good reasons for the reluctance to offer tar downloads -- Docker afterall (finally) has content-addressable images, which go a long way to ensure images aren't being tampered with by <a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack">MitM attacks</a>. That is of course, if you use docker pull; you lose those guarantees if you operate on plain tar files.</p>
 <p>But suppose you know what you're doing and really want to download these tar files, because there is no other way. How can you go about this?</p>
 <h1>Options</h1>
-<h2>docker pull &amp;&amp; docker save</h2>
-<p>If you have access to a machine with internet access and some place to host images after pulling them, then all you need is to pull and save the image using docker cli and upload resulting tar file to some hosting service where you can fetch the file from. This however, can get quite tedious if every time you come up with a new Docker image you need to leave your working environment and spend time running this process.</p>
+<h2>Off-site docker pull &amp;&amp; docker save</h2>
+<p>If you have access to an off-site machine with internet access and some place to host images after pulling them, then all you need is to pull and save the image using docker cli and upload resulting tar file to some hosting service where you can fetch the file from. This however, can get quite tedious if every time you come up with a new Docker image you need to leave your working environment and spend time running this process.</p>
 <h2>Wrap docker pull &amp;&amp; save in a CGI script</h2>
 <p>Next obvious iteration is to just make a web service calling docker pull/save that just serves you the finished download. This comes with... issues. To name a few:</p>
 <ul>
@@ -68,7 +68,7 @@
 <p>So basically, if a standard browser is all you have, you're mostly stuck with proxying requests.</p>
 <h1>Epilogue</h1>
 <p>I've hosted a <a href="https://0x90.lt/download.html">very crude UI</a> to the downloader, with source code on <a href="https://github.com/tomciaaa/docker-downloader">github</a>. There's a 500G bandwidth limit on my hosted version, so if anyone knows of a cloud provider without bandwidth caps, feel free to drop in an email <github username>@gmail.com.</p>
-<h1>PS</h1>
+<h1>P.S.</h1>
 <p>I am aware of services like <a href="https://www.sonatype.com/download-oss-sonatype">Nexus Repository Manager</a> or <a href="https://jfrog.com/artifactory/">Artifactory</a> which do come with Docker support, but installing those seemed a bit overkill for the puzzle at hand, also not sure if either actually provides a 'download as tar' link for their Docker repositories.</p>
     </div><!-- /.entry-content -->
 
