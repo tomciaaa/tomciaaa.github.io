@@ -20,7 +20,64 @@
 
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href="/a-journey-to-the-kerberos-how-to-get-kerberized-c-kafka-windows-clients-connecting-to-linux-brokers-all-backed-by-active-directory.html">A journey to the Kerberos: how to get Kerberized C Kafka Windows clients connecting to Linux brokers all backed by Active Directory</a></h1>
+                    <h1 class="entry-title"><a href="/downloading-docker-images-for-almost-air-gapped-environments.html">Downloading Docker images for (almost) air-gapped environments</a></h1>
+<footer class="post-info">
+        <abbr class="published" title="2018-05-05T18:14:02+00:00">
+                Published: Sat 05 May 2018
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/tomciaaa.html">tomciaaa</a>
+        </address>
+<p>In <a href="/category/tech.html">Tech</a>.</p>
+
+</footer><!-- /.post-info --><h1>Use <code>docker pull</code>, what's the problem?</h1>
+<p>Well, the problem is that in some cases you just can't -- whatever you're working on is just not connected to the internet. But there might be a system for fetching files like offline installers via the browser (because you know, even air-gapped environments need to install regular updates).</p>
+<p>So that's essentially the challenge: how do you download Docker images to use later, if all you have is a browser.</p>
+<h1>Background</h1>
+<p>To the uninitiated, Docker images indeed can be saved and loaded as simple tar files, as docker cli provides <a href="https://docs.docker.com/engine/reference/commandline/save">save</a> and <a href="https://docs.docker.com/engine/reference/commandline/load/">load</a> commands. So one would assume that <a href="https://hub.docker.com">Docker Hub</a> and similar would allow you to just download these tar files, right? Well, no. Closest I've seen was <a href="https://quay.io">quay.io</a>, but even then you need to have special perms to the repo. And there are good reasons for the reluctance to offer tar downloads -- Docker afterall (finally) has content-addressable images, which go a long way to ensure images aren't being tampered with by <a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack">MitM attacks</a>. That is of course, if you use docker pull; you lose those guarantees if you operate on plain tar files.</p>
+<p>But suppose you know what you're doing and really want to download these tar files, because there is no other way. How can you go about this?</p>
+<h1>Options</h1>
+<h2>docker pull &amp;&amp; docker save</h2>
+<p>If you have access to a machine with internet access and some place to host images after pulling them, then all you need is to pull and save the image using docker cli and upload resulting tar file to some hosting service where you can fetch the file from. This however, can get quite tedious if every time you come up with a new Docker image you need to leave your working environment and spend time running this process.</p>
+<h2>Wrap docker pull &amp;&amp; save in a CGI script</h2>
+<p>Next obvious iteration is to just make a web service calling docker pull/save that just serves you the finished download. This comes with... issues. To name a few:</p>
+<ul>
+<li>You now need to manage your disk: clean up old images, make sure you don't clean up images not yet downloaded or currently being fetched. And this needs to happend automatically and reliably, because you are no longer manually running docker cli, so any issues you run into you can't fix (remember, this CGI script is a black box when you use it, because you can only poke it via a browser).</li>
+<li>If you are behind an aggressive proxy that kills connections after seconds of silence on the wire, you need to do something while your CGI script is running docker pull/docker save and not returning output.</li>
+<li>You need docker running on this server, and your CGI script needs access to docker (with all the fun security implications).</li>
+<li>CGI scripts, really?!</li>
+</ul>
+<h2>Docker save script to the rescue</h2>
+<p>The open source community has come up with a <a href="https://raw.githubusercontent.com/moby/moby/master/contrib/download-frozen-image-v2.sh">bash script</a> to run the download without invoking Docker. Sadly this still downloads stuff onto the hard-drive. Is there really no way to avoid that?</p>
+<h2>Convert Docker save script into a (Java) app</h2>
+<p>I feel queasy when people talk about CGI scripts, but am quite comfortable writing Java web services and this seemed to fit the bill just right. So I ended up writing a <a href="https://github.com/tomciaaa/docker-downloader">Spring Boot app</a> that just translated the bash script, with a few key differences:</p>
+<ul>
+<li>Nothing sizeable is saved to disk or memory. The image manifest and config files are the only things downloader fetches and stores in memory as it needs those to find the Docker layer files. From this point the downloader constructs a streaming tar file writer and forwards fetched data directly to the browser as a downloadable stream.</li>
+<li>Because there is not pre-fetch phase, connection is always active, so no need to worry about proxy timeouts.</li>
+<li>This can run on the tiniest cloud instances, all you need to worry about is you bandwidth costs.</li>
+</ul>
+<h1>Bandwidth, bandwidth, bandwidth</h1>
+<p>While this works fine, there is a slight issue of now hosting a proxy. Would it not be great if JavaScript could somehow be coerced into downloading this directly from the browser? Well, we have a way to construct tar streams on the fly in JavaScript and force them to be downloaded, thanks to <a href="https://github.com/jimmywarting/StreamSaver.js">StreamSaver.js</a> and <a href="https://github.com/mafintosh/tar-stream">tar-stream</a> libraries. </p>
+<p>But most client-side developers will by now be screaming: CORS! And they are right, unless you turn off CORS in your browser, this cannot run, because by the very design if this fetcher, you're attempting to fetch files hosted on a different domain. As a final nail in the coffin of this idea, it would seem Web Assembly or even Native Client are of no help, because they would still have to obey CORS rules in their HTTP connections.</p>
+<p>So basically, if a standard browser is all you have, you're mostly stuck with proxying requests.</p>
+<h1>Epilogue</h1>
+<p>I've hosted a <a href="https://0x90.lt/download.html">very crude UI</a> to the downloader, with source code on <a href="https://github.com/tomciaaa/docker-downloader">github</a>. There's a 500G bandwidth limit on my hosted version, so if anyone knows of a cloud provider without bandwidth caps, feel free to drop in an email <github username>@gmail.com.</p>
+<h1>PS</h1>
+<p>I am aware of services like <a href="https://www.sonatype.com/download-oss-sonatype">Nexus Repository Manager</a> or <a href="https://jfrog.com/artifactory/">Artifactory</a> which do come with Docker support, but installing those seemed a bit overkill for the puzzle at hand, also not sure if either actually provides a 'download as tar' link for their Docker repositories.</p>                </article>
+            </aside><!-- /#featured -->
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="/a-journey-to-the-kerberos-how-to-get-kerberized-c-kafka-windows-clients-connecting-to-linux-brokers-all-backed-by-active-directory.html" rel="bookmark"
+                           title="Permalink to A journey to the Kerberos: how to get Kerberized C Kafka Windows clients connecting to Linux brokers all backed by Active Directory">A journey to the Kerberos: how to get Kerberized C Kafka Windows clients connecting to Linux brokers all backed by Active Directory</a></h1>
+                </header>
+
+                <div class="entry-content">
 <footer class="post-info">
         <abbr class="published" title="2016-09-03T06:34:00+00:00">
                 Published: Sat 03 September 2016
@@ -31,74 +88,10 @@
         </address>
 <p>In <a href="/category/tech.html">Tech</a>.</p>
 
-</footer><!-- /.post-info --><p>Now that I got my best(worst?) attempt at referencing <a href="https://en.wikipedia.org/wiki/Journey_to_the_West">a tale</a> that served as inspiration to the <a href="https://en.wikipedia.org/wiki/Goku">legend of Goku</a> out of the way, let me tell you a tale of how over a week of teeth-gritting the gods of Kerberos were appeased and bent to my will. As you can probably guess from me referring to magical entities, by no means do I claim to have a deep understanding of what's going on, just that I got what I
-needed to work.</p>
-<h1>Premise</h1>
-<p>It all started with a challenge: <a href="https://kafka.apache.org">Kafka</a> supports SASL with GSSAPI(Kerberos), but the best non-Java public Kafka library available <a href="https://github.com/edenhill/librdkafka/blob/master/README.win32">only supports mutual TLS on Windows</a>. While mutual TLS is a good enough option for the most part, managing all those client certificates can be just as flawed as storing plaintext passwords (which we all know is a big no-no) so let's try something that most systems have integration with -- Kerberos.</p>
-<p>As for why non-Java and Windows... well, a lot more of the world is running Windows than you would think and C# is just much nicer than Java :)</p>
-<h1>Preliminaries</h1>
-<p>The first thing I ran into on this adventure was a distinct lack of practical docs. I would go as far as to say, theoretical Kerberos protocol explanations outnumbered any practical Google results by an order of magnitude. And as is usually the case practical details would cover a very specific bug somebody has encountered and even more infuriating, when it was solved it was usually 'set this magic flag in this 3rd party product', revealing nothing about how the innards of the beast look like. To this day, I have no 100% clear picture what the heck SASL, GSSAPI, SSPI and Kerberos are <strong>exactly</strong> and it's all based on my experimentation over the last week.</p>
-<p>With that said, this is roughly how the lines are drawn in my brain:</p>
-<h2>SASL</h2>
-<p>Is a framework, just like per the <a href="https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer">wiki page</a>. In hindsight, that's exactly what it is -- it's just a way to process messages and get responses. A very good example of the process is provided by <a href="https://docs.oracle.com/javase/7/docs/api/javax/security/sasl/SaslServer.html">Oracle's docs</a>. Note that it <em>does not handle any of the network communcation for you</em>! What I mean by that is that while SASL pluggins can do whatever they want (e.g. a Kerberos plugin will likely communicate the the KDC over the wire), SASL libraries will not handle client-server communication for you. In the case of Kafka, the server and client use a more or less custom protocol to exchange messages and SaslServer/SaslClient instances are used to process the messages once the server/client have read them off the network into a byte array representing the SASL message.</p>
-<p>So I repeat, and I cannot stress this enough: SASL is <strong>not</strong> a protocol. One SASL-enabled client cannot authenticate to a random SASL-enabled server, like for example a pair of random TLS client/server could, because contrary to TLS, SASL is not a standard wire protocol.</p>
-<h2>GSSAPI/SSPI/Kerberos</h2>
-<p>This I have very little knowledge about, as such the below paragraph is just my understanding and definitely not statement of hard facts. I was just lucky that <a href="https://web.mit.edu/kerberos/">MIT Kerberos</a> implements GSSAPI and in the end manages to communicate with Windows Active Directory seemlessly (give or take a few caveats). My understanding is that Kerberos refers to the actual <a href="https://en.wikipedia.org/wiki/Kerberos_%28protocol%29#Protocol">wire protocol</a>, while GSSAPI defines the API (local method calls implemented in a DLL somewhere) that software can use to get Kerberos auth working. Finally, SSPI is a Microsoft take on GSSSAPI which is <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa380496(v=vs.85).aspx">just a little bit different</a>.</p>
-<h2>Windows Active Directory (aka. AD)</h2>
-<p>For the purposes of the story, this will be synonymous with the KDC (Key Distribution Center). Meaning it's the server Kerberos clients hit up when they want a new ticket.</p>
-<h1>Fun stuff</h1>
-<p>Now that we have a clue what we're trying to build let's get going. So the first thing I wanted to try out was a SASL-enabled server using GSSAPI. As we're working with Kafka, I decided to cribb off Kafka a simple SASL server:</p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">javax.security.sasl.*</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">javax.security.auth.login.*</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">javax.security.auth.callback.*</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">javax.security.auth.Subject</span><span class="o">;</span>
-
-<span class="kn">import</span> <span class="nn">java.security.PrivilegedExceptionAction</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">java.security.PrivilegedActionException</span><span class="o">;</span>
-
-<span class="kn">import</span> <span class="nn">java.util.*</span><span class="o">;</span>
-
-<span class="kd">public</span> <span class="kd">class</span> <span class="nc">TestSasl</span>
-<span class="o">{</span>
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">LoginException</span><span class="o">,</span> <span class="n">PrivilegedActionException</span>
-    <span class="o">{</span>
-        <span class="n">LoginContext</span> <span class="n">loginCtx</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LoginContext</span><span class="o">(</span><span class="s">&quot;KafkaServer&quot;</span><span class="o">);</span>
-        <span class="n">loginCtx</span><span class="o">.</span><span class="na">login</span><span class="o">();</span>
-        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Login subject: &quot;</span> <span class="o">+</span> <span class="n">loginCtx</span><span class="o">.</span><span class="na">getSubject</span><span class="o">());</span>
-        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Logged in successfully!&quot;</span><span class="o">);</span>
-        <span class="n">SaslServer</span> <span class="n">server</span> <span class="o">=</span> <span class="n">Subject</span><span class="o">.</span><span class="na">doAs</span><span class="o">(</span><span class="n">loginCtx</span><span class="o">.</span><span class="na">getSubject</span><span class="o">(),</span> <span class="k">new</span> <span class="n">PrivilegedExceptionAction</span><span class="o">&lt;</span><span class="n">SaslServer</span><span class="o">&gt;()</span> <span class="o">{</span>
-            <span class="kd">public</span> <span class="n">SaslServer</span> <span class="nf">run</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">SaslException</span> <span class="o">{</span>
-                <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Getting a SASL server...&quot;</span><span class="o">);</span>
-                <span class="k">return</span> <span class="n">Sasl</span><span class="o">.</span><span class="na">createSaslServer</span><span class="o">(</span><span class="s">&quot;GSSAPI&quot;</span><span class="o">,</span> <span class="s">&quot;kafka&quot;</span><span class="o">,</span> <span class="cm">/*FQDN of the server*/</span><span class="o">,</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;(),</span> <span class="kc">null</span><span class="o">);</span>
-            <span class="o">}</span>
-        <span class="o">});</span>
-    <span class="o">}</span>
-<span class="o">}</span>
-</pre></div>
-
-
-<p>For this to work, you'll need to set some Java flags and Kerberos principles issued, as per <em>Prerequisites</em> and <em>Configuring Kafka Brokers</em> subsections in <a href="https://kafka.apache.org/documentation.html#security_sasl_kerberos">Kafka instructions</a>. While the Kerberos commands there are for Linux, finding translations for Active Directory is easy enough, or so it would seem...</p>
-<h2>setspn vs kadmin 'addprinc'</h2>
-<p>This is another gotcha that wasn't very well covered. While <code>setspn</code> command is relatively straight forward to use and it would seem it does the same thing as its MIT Kerberos counterpart, it's not quite. And it all boils down to different treatment of Kerberos principals in MIT KDC and Windows Active Directory. In MIT KDCs, you can get a Ticket Granting Ticket, a.k.a. TGT, (essentially authenticate to the KDC) as any principal so long as you have the password.</p>
-<p>Now in Active Directory, not all principals are created equal: you can have User Principal Names (UPNs) or Service Principal Names (SPNs). And in Active Directory only UPN principals can be granted TGTs and only SPNs can run services. This messes up things for Kafka quite badly as it uses the same principal to get a TGT as and run a service(as does our example Java code above). Also SPNs need to match the FQDN of the host the service is running on. If you're still with me, all this implies in Windows Active Directory you end up with a UPN of the form <code>kafka/fqdn.domain.com@DOMAIN.COM</code>. Also that means a single user cannot run multiple services on run on multiple boxes, because as far as I know, a user can only have one UPN.</p>
-<p>And this is the reason, 3rd party Hadoop management tools like <a href="http://ambari.apache.org/">Ambari</a> create a tonne of weird-looking users in your Active Directory. Finally, this whole thing means that there is no way to test-setup up a few Kerberized Kafka nodes as a single user, making testing a bit of a nightname in an enterprise environment.</p>
-<h2>Cyrus SASL on Windows</h2>
-<p>Let's assume we got all the issues from the above sorted and our Kafka brokers running on Windows happily authenticate other Java clients so we know the AD is OK. But now we're faced with a question -- how on earth do I sort out Windows access. Well, a quick Google once again suggests we're treading on a path less explored. Cyrus SASL seems like a decent option, plus given that our target is <a href="https://github.com/edenhill/librdkafka">librdkafka</a> that's what I'm trying to get going.</p>
-<p>First off, let's have a quick look at the <a href="https://www.cyrusimap.org/docs/cyrus-sasl/2.1.25/windows.php">build instructions on the official site</a>. Mentions of Visual Studio 6 and the last non-automated commit to that document being just a <a href="https://github.com/cyrusimap/cyrus-sasl/commits/master/doc/windows.html">hair over a decade old</a> is not confidence inspiring nor is the mention of only supporting a proprietary Kerberos implementation by CyberSafe. Nonetheless, when the going gets tough, the tough get going. After getting latest <a href="https://slproweb.com/products/Win32OpenSSL.html">OpenSSL for Windows</a>, the MIT Kerberos for Windows SDK outlined below, and sorting out settings in <code>win32/common.mk</code>, a few includes and <code>#define</code> values the whole thing builds using <a href="https://msdn.microsoft.com/en-GB/library/ms229859(v=vs.110).aspx">Visual Studio Developer Command Prompt</a> and the <a href="https://msdn.microsoft.com/en-us/library/dd9y37ha.aspx">nmake</a> commands as per the decade old docs. It does finish with and error status, but that's linking the executables and I really didn't care for them.</p>
-<h3>Ah the Windows Registry</h3>
-<p>I thought this deserved a special shout-out as this had me stumped for a good few hours. After I built the thing, Cyrus SASL was getting these magic plugins that I hadn't even compiled in its list (and missing the all important saslGSSAPI plugin that I <em>did</em> compile). After eventually firing up a debugger, it turns out that I had another piece of software installed that came with Cyrus SASL libraries and in its infinite wisdom the library looks up its plugin location based on <code>SOFTWARE\\Carnegie Mellon\\Project Cyrus\\SASL Library</code> registry value which this other piece of software has helpfully set. Luckily it allows one to provide a callback to specify the plugin location, but it still was quite a significant WTF moment seeing DLLs being loaded in almost a <a href="https://www.youtube.com/watch?v=HhGuXCuDb1U&amp;feature=youtu.be&amp;t=354">homeopathic manner, purely by virtue of the code being next to the library at some point</a>.</p>
-<h2>MIT Kerberos for Windows</h2>
-<p>This was probably the most pleasant surprise during the entire process. It actually worked pretty much out of the box without too much prodding and MIT even provide a <a href="http://web.mit.edu/kerberos/dist/#kfw-4.1">binary installer</a>. But again, me being me, I managed to go about this in all the wrong ways and <a href="http://clientsfromhell.net/post/356276259/i-dont-care-if-it-loses-90-of-visitors-we-cant">just like that client from hell, I believe I must share it with you</a>. First off, I decided that it would be a good idea to not install the 'client' part from the installer only going for the SDK. That's cool and all, but turn out the SDK only includes compile time libraries (.lib files for linking, no runtime .dlls). After that I got annoyed with the installer asking me to restart the machine (I know I don't need to, but I just want the libraries, not whatever else it may be doing to my aforementioned magic Windows Registry). So I extracted it using 7zip and after some file renaming it was good to go -- for some reason after extracting the .msi archive using 7zip some prefixes were added and dots were mostly replaced with underscores leading to files like libgssappi_dll.
-However, this sent me on a very silly wild goose-chase, since I missed an important part about the krb5.conf file... On Windows it's called krb5.ini. I even managed to forget reading it from the same <a href="https://github.com/krb5/krb5/blob/master/src/windows/README">doc</a> I read to figure out where the conf file is read from on Windows. Another tricky bit, the colon at the end of the cache name is important! you want <code>default_ccache_name = "MSLSA:"</code> <strong>not</strong> <code>default_ccache_name = "MSLSA"</code> in your krb5.ini. After that it just magically works on Windows without any need for keytab files.</p>
-<h2>librdkafka + Cyrus SASL on Windows</h2>
-<p>Finally, tying it all together, getting <a href="https://github.com/edenhill/librdkafka">librdkafka</a> to run Kerberized was a simple enough process -- just don't forget you'll probably need that SASL_CB_GETPATH callback when calling <code>sasl_init</code> if you want to load the plugins you've actually built. There are also some clashing <code>#define</code> statements between Cyrus SASL headers and librdkafka and librdkafka process handling code in <code>rdkafka_sasl.c</code> is only for UNIX uses, but that can be dropped as you'll be using <code>MSLSA:</code> tickets cache, so no need for running <code>kinit</code> (another huge win :) ).</p>
-<h1>Fin</h1>
-<p>That's it folks. In broad strokes, that's how you bring in Linux Kerberized Kafka brokers into the land of Windows :)</p>                </article>
-            </aside><!-- /#featured -->
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
+</footer><!-- /.post-info -->                <p>Now that I got my best(worst?) attempt at referencing <a href="https://en.wikipedia.org/wiki/Journey_to_the_West">a tale</a> that served as inspiration to the <a href="https://en.wikipedia.org/wiki/Goku">legend of Goku</a> out of the way, let me tell you a tale of how over a week of teeth-gritting the gods of Kerberos were appeased and bent to my will. As ...</p>
+                <a class="readmore" href="/a-journey-to-the-kerberos-how-to-get-kerberized-c-kafka-windows-clients-connecting-to-linux-brokers-all-backed-by-active-directory.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
 
             <li><article class="hentry">
                 <header>
@@ -108,7 +101,7 @@ However, this sent me on a very silly wild goose-chase, since I missed an import
 
                 <div class="entry-content">
 <footer class="post-info">
-        <abbr class="published" title="2016-06-05T20:29:00+01:00">
+        <abbr class="published" title="2016-06-05T20:29:00+00:00">
                 Published: Sun 05 June 2016
         </abbr>
 

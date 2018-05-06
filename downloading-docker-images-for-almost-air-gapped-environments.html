@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
         <meta charset="utf-8" />
-        <title>Ramblings of a geek with a Chromebook - tomciaaa</title>
+        <title>Downloading Docker images for (almost) air-gapped environments</title>
         <link rel="stylesheet" href="/theme/css/main.css" />
 
         <!--[if IE]>
@@ -14,13 +14,18 @@
         <header id="banner" class="body">
                 <h1><a href="/">Ramblings of a geek with a Chromebook </a></h1>
                 <nav><ul>
-                    <li><a href="/category/tech.html">Tech</a></li>
+                    <li class="active"><a href="/category/tech.html">Tech</a></li>
                 </ul></nav>
         </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/downloading-docker-images-for-almost-air-gapped-environments.html" rel="bookmark"
+           title="Permalink to Downloading Docker images for (almost) air-gapped environments">Downloading Docker images for (almost) air-gapped environments</a></h1>
+    </header>
 
-            <aside id="featured" class="body">
-                <article>
-                    <h1 class="entry-title"><a href="/downloading-docker-images-for-almost-air-gapped-environments.html">Downloading Docker images for (almost) air-gapped environments</a></h1>
+    <div class="entry-content">
 <footer class="post-info">
         <abbr class="published" title="2018-05-05T18:14:02+00:00">
                 Published: Sat 05 May 2018
@@ -31,7 +36,7 @@
         </address>
 <p>In <a href="/category/tech.html">Tech</a>.</p>
 
-</footer><!-- /.post-info --><h1>Use <code>docker pull</code>, what's the problem?</h1>
+</footer><!-- /.post-info -->      <h1>Use <code>docker pull</code>, what's the problem?</h1>
 <p>Well, the problem is that in some cases you just can't -- whatever you're working on is just not connected to the internet. But there might be a system for fetching files like offline installers via the browser (because you know, even air-gapped environments need to install regular updates).</p>
 <p>So that's essentially the challenge: how do you download Docker images to use later, if all you have is a browser.</p>
 <h1>Background</h1>
@@ -64,59 +69,11 @@
 <h1>Epilogue</h1>
 <p>I've hosted a <a href="https://0x90.lt/download.html">very crude UI</a> to the downloader, with source code on <a href="https://github.com/tomciaaa/docker-downloader">github</a>. There's a 500G bandwidth limit on my hosted version, so if anyone knows of a cloud provider without bandwidth caps, feel free to drop in an email <github username>@gmail.com.</p>
 <h1>PS</h1>
-<p>I am aware of services like <a href="https://www.sonatype.com/download-oss-sonatype">Nexus Repository Manager</a> or <a href="https://jfrog.com/artifactory/">Artifactory</a> which do come with Docker support, but installing those seemed a bit overkill for the puzzle at hand, also not sure if either actually provides a 'download as tar' link for their Docker repositories.</p>                </article>
-            </aside><!-- /#featured -->
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
+<p>I am aware of services like <a href="https://www.sonatype.com/download-oss-sonatype">Nexus Repository Manager</a> or <a href="https://jfrog.com/artifactory/">Artifactory</a> which do come with Docker support, but installing those seemed a bit overkill for the puzzle at hand, also not sure if either actually provides a 'download as tar' link for their Docker repositories.</p>
+    </div><!-- /.entry-content -->
 
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/a-journey-to-the-kerberos-how-to-get-kerberized-c-kafka-windows-clients-connecting-to-linux-brokers-all-backed-by-active-directory.html" rel="bookmark"
-                           title="Permalink to A journey to the Kerberos: how to get Kerberized C Kafka Windows clients connecting to Linux brokers all backed by Active Directory">A journey to the Kerberos: how to get Kerberized C Kafka Windows clients connecting to Linux brokers all backed by Active Directory</a></h1>
-                </header>
-
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2016-09-03T06:34:00+00:00">
-                Published: Sat 03 September 2016
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="/author/tomciaaa.html">tomciaaa</a>
-        </address>
-<p>In <a href="/category/tech.html">Tech</a>.</p>
-
-</footer><!-- /.post-info -->                <p>Now that I got my best(worst?) attempt at referencing <a href="https://en.wikipedia.org/wiki/Journey_to_the_West">a tale</a> that served as inspiration to the <a href="https://en.wikipedia.org/wiki/Goku">legend of Goku</a> out of the way, let me tell you a tale of how over a week of teeth-gritting the gods of Kerberos were appeased and bent to my will. As ...</p>
-                <a class="readmore" href="/a-journey-to-the-kerberos-how-to-get-kerberized-c-kafka-windows-clients-connecting-to-linux-brokers-all-backed-by-active-directory.html">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/testing-net-core-ssl-or-where-is-the-certificate-store-on-linux.html" rel="bookmark"
-                           title="Permalink to Testing .Net Core SSL or where is the certificate store (on Linux)">Testing .Net Core SSL or where is the certificate store (on Linux)</a></h1>
-                </header>
-
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2016-06-05T20:29:00+00:00">
-                Published: Sun 05 June 2016
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="/author/tomciaaa.html">tomciaaa</a>
-        </address>
-<p>In <a href="/category/tech.html">Tech</a>.</p>
-
-</footer><!-- /.post-info -->                <p>After mucking about with this for a good few hours I decided it's at least worth a quick write-up.</p>
-<p>So first of all, most people are aware that OpenSSL is backing the SSL libraries in <a href="https://dotnet.github.io/">.Net Core</a> on Linux. Which is great, because <a href="http://project-mono.org">Mono</a>'s SSL support is horrible ...</p>
-                <a class="readmore" href="/testing-net-core-ssl-or-where-is-the-certificate-store-on-linux.html">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-                </ol><!-- /#posts-list -->
-                </section><!-- /#content -->
+  </article>
+</section>
         <section id="extras" class="body">
                 <div class="blogroll">
                         <h2>blogroll</h2>
